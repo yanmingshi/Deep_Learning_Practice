@@ -27,23 +27,31 @@ model_urls = {
 def conv3x3(in_planes: int, out_planes: int, stride: int = 1, dilation: int = 1):
     """
     3x3卷积
-    :param in_planes: 输入通道数
-    :param out_planes: 输出通道数
-    :param stride: 步长
-    :param dilation: 填充
-    :return:
+    Args:
+        in_planes: 输入通道数
+        out_planes: 输出通道数
+        stride: 步长
+        dilation: 填充
+
+    Returns:
+
     """
+
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=dilation, bias=False)
 
 
 def conv1x1(in_planes: int, out_planes: int, stride: int = 1):
     """
     1x1卷积
-    :param in_planes: 输入通道数
-    :param out_planes: 输出通道数
-    :param stride: 步长
-    :return:
+    Args:
+        in_planes: 输入通道数
+        out_planes: 输出通道数
+        stride: 步长
+
+    Returns:
+
     """
+
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 
@@ -52,6 +60,7 @@ class BasicBlock(nn.Module):
     50层以下网络用基本模块
     """
     expansion: int = 1
+
     def __init__(self,
                  inplanes: int,
                  planes: int,
@@ -65,7 +74,7 @@ class BasicBlock(nn.Module):
             norm_layer = nn.BatchNorm2d
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = norm_layer(planes)
-        self.relu = nn.ReLU(inplanes=True)
+        self.relu = nn.ReLU(inplace=True)
 
         self.conv2 = conv3x3(planes, planes)
         self.bn2 = norm_layer(planes)
@@ -151,6 +160,7 @@ class ResNet(nn.Module):
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer
+        # 初始第一个block通道数是64
         self.inplanes = 64
         # 第一层输入层卷积
         self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
@@ -173,6 +183,17 @@ class ResNet(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def _make_layer(self, block: Type[Union[BasicBlock, Bottleneck]], planes: int, blocks: int, stride: int = 1):
+        """
+        创建block层方法
+        Args:
+            block: block类型
+            planes: 层内首个block输出通道数
+            blocks: 层block数量
+            stride: 步长
+
+        Returns:
+
+        """
 
         norm_layer = self._norm_layer
         downsample = None
@@ -184,6 +205,7 @@ class ResNet(nn.Module):
                 norm_layer(planes * block.expansion)
             )
         layers = []
+        # 每层第一个block单独拿出来创建，因为涉及到downsample
         layers.append((block(self.inplanes, planes, stride, downsample, norm_layer)))
         self.inplanes = planes * block.expansion
         for _ in range(1, blocks):
@@ -217,11 +239,29 @@ def _resnet(arch: str,
             progress: bool,
             **kwargs: Any
             ):
+    """
+    创建resnet
+    Args:
+        arch:
+        block:
+        layers: 每层block数量
+        pretrained:
+        progress:
+        **kwargs:
+
+    Returns:
+
+    """
     model = ResNet(block, layers, **kwargs)
+    # 是否加载预训练数据
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
+
+
+def resnet34(pretrained=False, progress=True, **kwargs):
+    return _resnet('resnet34', BasicBlock, [3, 4, 6, 3], pretrained, progress, **kwargs)
 
 
 def resnet152(pretrained=False, progress=True, **kwargs):
@@ -229,5 +269,8 @@ def resnet152(pretrained=False, progress=True, **kwargs):
 
 
 if __name__ == '__main__':
-    model = resnet152(pretrained=False)
+    # model = resnet152(pretrained=False)
+    model = resnet34()
     model.eval()
+    print(model)
+
