@@ -24,6 +24,7 @@ unloader = transforms.ToPILImage()  # reconvert into PIL image
 
 LOG_DOR = "checkpoint/model.pth"
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def imshow(tensor, title=None):
     """
@@ -64,7 +65,7 @@ def load_image(image_path, transform=None, max_size=None, shape=None):
     if transform:
         image = transform(image).unsqueeze(0)
 
-    return image
+    return image.to(device)
 
 
 transform = transforms.Compose([
@@ -99,9 +100,9 @@ if __name__ == '__main__':
     style_weight = 100.
     # 优化target图片，图片初始化内容和原图片一致
     target = content.clone().requires_grad_(True)
-    vgg = VGGNet().eval()  # eval() 表示不会被优化
+    vgg = VGGNet().to(device).eval()  # eval() 表示不会被优化
     target_features = vgg(target)
-    optimizer = torch.optim.Adam([target], lr=0.003, betas=[0.5, 0.999])
+    optimizer = torch.optim.Adam([target], lr=0.0003, betas=[0.5, 0.999])
 
     if os.path.exists(LOG_DOR):
         checkpoint = torch.load(LOG_DOR)
